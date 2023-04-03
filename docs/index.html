@@ -1,0 +1,274 @@
+**Nori Final Project - Loop**
+
+Student name: Xingyu Su
+
+Final render
+============
+
+![Figure [final]: Final render](final.png width="800px")
+
+Motivation
+==========
+
+My final render contains a curious robot who is playing toy cars on a loop track. The car would slide down along the track for the
+robot to pick up again, which is another sense of 'loop'.
+
+Feature list
+============
+
+<table>
+    <tr>
+        <th>Feature</th>
+        <th>Standard point count</th>
+        <th>Adjusted point count</th>
+    </tr>
+    <tr>
+        <td>Textures or Procedural Images</td>
+        <td>10</td>
+        <td>10</td>
+    </tr>
+    <tr>
+        <td>Depth of Field</td>
+        <td>10</td>
+        <td>10</td>
+    </tr>
+    <tr>
+        <td>Bump mapping / Normal mapping</td>
+        <td>10</td>
+        <td>10</td>
+    </tr>
+    <tr>
+        <td>Simple extra BSDFs</td>
+        <td>10</td>
+        <td>10</td>
+    </tr>
+    <tr>
+        <td>Image Based Lighting</td>
+        <td>30</td>
+        <td>10</td>
+    </tr>
+    <tr>
+        <td>Homogeneous participating media</td>
+        <td>30</td>
+        <td>30</td>
+    </tr>
+    <tr>
+        <td><strong>Total</strong></td>
+        <td>100</td>
+        <td>80</td>
+    </tr>
+</table>
+
+**Note:**
+
+All of the implemented features are validated with `Mitsuba2` using equivalent/similar parameters.
+
+Textures or Procedural Images
+=============================
+
+**Related code:**
+
+- `include/nori/project/texture.h`
+- `src/project/imagetex.cpp`
+
+`texture.h` is a common interface for all kinds of textures. In `imagetex.cpp`, I implement the bitmap texture which uses bilinear
+interpolation to get texels from image based on UV coordinates. Each `Texture` is a child bind to a `BSDF` instance. When evaluating
+or sampling a `BSDF`, `getTexel()` is called simultaneously if the `BSDF` has a texture.
+
+**Validation:**
+
+- Left: Mitsuba, `scenes/project/texture/test2/cbox_mats_mitsuba.xml`
+- Right: Mine, `scene/project/texture/test2/cbox_mats.xml`
+
+<div class="twentytwenty-container">
+    <img src="validation/texture/cbox_mats_mitsuba.png" alt="Mitsuba">
+    <img src="validation/texture/cbox_mats.png" alt="Mine">
+</div>
+
+Depth of Field
+==============
+
+**Related code:**
+
+- `src/project/thinlens.cpp`
+
+When sampling rays, instead of shooting rays from a pinhole, generate points on the aperture and calculate the correspoinding rays.
+
+**Validation:**
+
+- Left: Mitsuba, `scenes/project/depth/test1/cbox_mats_mitsuba.xml`
+- Right: Mine, `scene/project/depth/test1/cbox_mats.xml`
+
+<div class="twentytwenty-container">
+    <img src="validation/depth/cbox_mats_mitsuba.png" alt="Mitsuba">
+    <img src="validation/depth/cbox_mats.png" alt="Mine">
+</div>
+
+Normal Mapping
+==============
+
+**Related code:**
+
+- `include/nori/project/surface.h`
+- `src/project/normalmap.cpp`
+
+`surface.h` is a common interface for additional surface description. In `normalmap.cpp`, for evaluation of a surface point, I
+first find the normal based on UV coordinate using bilinear interpolation. Then I do transformation based on the original normal.
+Each `Surface` is bind to a `Mesh` instance, and the adjust of normal is done in each integrator when a ray hits a mesh with a
+`Surface` instance.
+
+**Validation:**
+
+- Left: Mitsuba, `scenes/project/normal/test1/normal_mitsuba.xml`
+- Right: Mine, `scene/project/normal/test1/normal.xml`
+
+<div class="twentytwenty-container">
+    <img src="validation/normal/cbox_mats_mitsuba.png" alt="Mitsuba">
+    <img src="validation/normal/cbox_mats.png" alt="Mine">
+</div>
+
+Simple Extra BSDF
+=================
+
+**Related code:**
+
+- `src/project/roughconductor.cpp`
+- `src/project/roughdielectric.cpp`
+
+For each BSDF, I implement the `sample()`, `eval()` and `pdf()` method and make them consistent to pass the warptest. The sampling
+basically follows Mitsuba.
+
+**Validation:**
+
+Rough Conductor
+
+- $\alpha = 0.1$
+- Left: Mitsuba, `scenes/project/rough/test2/ajax_mitsuba.xml`
+- Right: Mine, `scene/project/rough/test2/ajax.xml`
+
+<div class="twentytwenty-container">
+    <img src="validation/roughconductor/ajax_mitsuba.png" alt="Mitsuba">
+    <img src="validation/roughconductor/ajax.png" alt="Mine">
+</div>
+
+Rough Conductor Warptest
+
+- $\alpha = 0.3$
+- Default $eta$ and $k$
+
+![Figure [warpconductor_a]: Warptest for rough conductor](validation/roughconductor/warpconductor_a.png width="800px")
+
+![Figure [warpconductor_b]: Warptest for rough conductor](validation/roughconductor/warpconductor_b.png width="800px")
+
+Rough Dielectric
+
+- $\alpha = 0.2$
+- Left: Mitsuba, `scenes/project/rough/test1/ajax_mitsuba.xml`
+- Right: Mine, `scene/project/rough/test1/ajax.xml`
+
+<div class="twentytwenty-container">
+    <img src="validation/roughdielectric/ajax_mitsuba.png" alt="Mitsuba">
+    <img src="validation/roughdielectric/ajax.png" alt="Mine">
+</div>
+
+Rough Conductor Warptest
+
+- $\alpha = 0.3, intIOR = 1.5046, extIOR = 1.000277$
+
+![Figure [warpdielectric_a]: Warptest for rough dielectric](validation/roughdielectric/warpdielectric_a.png width="800px")
+
+![Figure [warpdielectric_b]: Warptest for rough dielectric](validation/roughdielectric/warpdielectric_b.png width="800px")
+
+Image Based Lighting
+====================
+
+**Related code:**
+
+- `src/project/environment.cpp`
+- `src/project/envpath_ems.cpp`
+- `src/warp.cpp`
+
+For the image based lighting, since I did the bonus part in Assignment 3, I continue to use hierachical sampling instead of the
+sampling method described in PBRT for this feature. The hierachical sampling and pdf function is defined in `warp.cpp`. 
+`environment.cpp` is the image based lighting emitter derived from `Emitter` class. It behaves like all other emitters, except for
+when a ray intersect with nothing in the scene, we would evaluate $Li$ based on the direction of the ray. `envpath_ems` is an
+integrator supporting image based lighting with next event estimation.
+
+**Validation:**
+
+Image Based Lighting with Next Event Estimation
+
+- Left: Mitsuba, `scenes/project/environment/test2/ajax_mitsuba.xml`
+- Right: Mine, `scene/project/environment/test2/ajax.xml`
+
+<div class="twentytwenty-container">
+    <img src="validation/environment/ajax_mitsuba.png" alt="Mitsuba">
+    <img src="validation/environment/ajax.png" alt="Mine">
+</div>
+
+Hierachical Sampling Warptest
+
+![Figure [hierachical]: Warptest for hierachical sampling](validation/environment/hierachical.png width="800px")
+
+Imaged Based Lighting Warptest
+
+![Figure [ibl]: Warptest for image based lighting](validation/environment/ibl.png width="800px")
+
+I do not pass the warptest for image based lighting emitter, but the $\chi^2$ statistic is quite close to the degree of freedom,
+and the two images look very similar. Besides, the result of the integrator with next event estimation actually looks almost the
+same as Mitsuba's rendering. So I think the implementaion is mostly correct.
+
+Homogeneous participating media
+===============================
+
+**Related code:**
+
+- `include/project/medium.h`
+- `include/project/phase_function.h`
+- `src/project/henyeygreenstein.cpp`
+- `src/project/isotropic.cpp`
+- `src/project/homogeneous.cpp`
+- `src/project/mixpath.cpp`
+- `src/project/nothing.cpp`
+
+My implementaion of homogeneous participating media basically follows the guidance in Lecture 11 slides. `mixpath.cpp` is a path
+tracer supporting volumetirc rendering and also all the features implemented before. `medium.h` and `phase_function.h` are the
+base class for different medium and phase functions. `homogeneous.cpp` is the class for homogeneous participating media. The main
+method it provides is `sampleT()`, which given current ray and $t_{max}$, samples within the medium either for a random distance or
+reach the $t_{max}$. The main logic of volumetric rendering is implemented in `mixpath`. It records whether it's within medium or
+not and does BSDF or medium sampling accordingly. Each `Medium` is a child bind to a `Mesh` instance, and each `PhaseFunction` is
+a child of a `Medium` instance. I also add a new BSDF called nothing which causes no BSDF interaction to mark the boundry of
+medium.
+
+**Validation:**
+
+Without Surface
+
+- Left: Mitsuba, `scenes/project/volume/test3/cbox_mats_mitsuba.xml`
+- Right: Mine, `scene/project/volume/test3/cbox_mats.xml`
+
+<div class="twentytwenty-container">
+    <img src="validation/volumenothing/cbox_mats_mitsuba.png" alt="Mitsuba">
+    <img src="validation/volumenothing/cbox_mats.png" alt="Mine">
+</div>
+
+With Dielectric Surface
+
+- Left: Mitsuba, `scenes/project/volume/test2/cbox_mats_mitsuba.xml`
+- Right: Mine, `scene/project/volume/test2/cbox_mats.xml`
+
+<div class="twentytwenty-container">
+    <img src="validation/volumedielectric/cbox_mats_mitsuba.png" alt="Mitsuba">
+    <img src="validation/volumedielectric/cbox_mats.png" alt="Mine">
+</div>
+
+<!-- Slider -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src="../resources/jquery.event.move.js"></script>
+<script src="../resources/jquery.twentytwenty.js"></script>
+<link href="../resources/offcanvas.css" rel="stylesheet">
+<link href="../resources/twentytwenty.css" rel="stylesheet" type="text/css" />
+<script>var markdeepOptions = {onLoad: function() {$(".twentytwenty-container").twentytwenty({default_offset_pct: 0.5, move_slider_on_hover: true, before_label: 'Mitsuba', after_label: 'Mine'});} };</script>
+<!-- Markdeep: -->
+<script src="https://morgan3d.github.io/markdeep/latest/markdeep.min.js?" charset="utf-8"></script>
+<script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>
